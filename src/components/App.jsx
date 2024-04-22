@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useEffect, useState } from 'react';
 import { fetchImages } from './service/API';
 import { Searchbar } from './Searchbar/Searchbar';
 import { Container } from './App.styled';
@@ -6,72 +6,87 @@ import { ImageGallery } from './ImageGallery/ImageGallery';
 import { Button } from './Button/Button';
 import { Loader } from './Loader/Loader';
 
-export class App extends Component {
-  state = {
-    images: [],
-    query: '',
-    page: 1,
-    totalPages: null,
-    isError: false,
-    isLoading: false,
-  };
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(null);
+  const [error, setError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  async componentDidUpdate(_, prevState) {
-    const { query, page } = this.state;
-    if (prevState.query !== query || prevState.page !== page) {
+  useEffect(() => {
+    if (!query) {
+      return;
+    }
+
+    async function getPages() {
       try {
-        this.setState({ isLoading: true, isError: false });
-        const response = await fetchImages(query, page);
+        setIsLoading(true);
+        setError(false);
 
-        this.setState(prevState => {
-          const { hits, totalHits } = response;
-          return {
-            images: [...prevState.images, ...hits],
-            isLoading: false,
-            totalPages: Math.ceil(totalHits / 12),
-          };
-        });
+        const response = await fetchImages(query, page);
+        const { hits, totalHits } = response;
+
+        setImages(prevImages => [...prevImages, ...hits]);
+        setIsLoading(false);
+        setTotalPages(Math.ceil(totalHits / 12));
       } catch (error) {
-        this.setState({ isError: true });
+        setError(true);
       } finally {
-        this.setState({ isLoading: false });
+        setIsLoading(false);
       }
     }
-  }
+    getPages();
+  }, [query, page]);
 
-  handleSubmit = newQuery => {
-    this.setState({
-      query: newQuery,
-      page: 1,
-      images: [],
-    });
+  // async componentDidUpdate(_, prevState) {
+  //   const { query, page } = this.state;
+  //   if (prevState.query !== query || prevState.page !== page) {
+  //     try {
+  //       this.setState({ isLoading: true, isError: false });
+  //       const response = await fetchImages(query, page);
+
+  //       this.setState(prevState => {
+  //         const { hits, totalHits } = response;
+  //         return {
+  //           images: [...prevState.images, ...hits],
+  //           isLoading: false,
+  //           totalPages: Math.ceil(totalHits / 12),
+  //         };
+  //       });
+  //     } catch (error) {
+  //       this.setState({ isError: true });
+  //     } finally {
+  //       this.setState({ isLoading: false });
+  //     }
+  //   }
+  // }
+
+  const handleSubmit = newQuery => {
+    setQuery(newQuery);
+    setPage(1);
+    setImages([]);
   };
 
-  handleLoadMore = () => {
-    this.setState(prevState => {
-      return {
-        page: prevState.page + 1,
-      };
-    });
+  const handleLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  render() {
-    const { isError, images, page, totalPages, isLoading } = this.state;
-    const galleryImages = images.length !== 0;
-    const notLastPage = page < totalPages;
-    return (
-      <Container>
-        <Searchbar onSubmit={this.handleSubmit} />
-        {isError && (
-          <p>Oops! Something went wrong! Please try reloading this page!</p>
-        )}
-        <Loader isLoading={isLoading} />
+  const galleryImages = images.length !== 0;
+  const notLastPage = page < totalPages;
 
-        {galleryImages && <ImageGallery images={images} />}
-        {galleryImages && notLastPage && (
-          <Button btnName="Load more" onClick={this.handleLoadMore} />
-        )}
-      </Container>
-    );
-  }
-}
+  return (
+    <Container>
+      <Searchbar onSubmit={handleSubmit} />
+      {error && (
+        <p>Oops! Something went wrong! Please try reloading this page!</p>
+      )}
+      <Loader isLoading={isLoading} />
+
+      {galleryImages && <ImageGallery images={images} />}
+      {galleryImages && notLastPage && (
+        <Button btnName="Load more" onClick={handleLoadMore} />
+      )}
+    </Container>
+  );
+};
