@@ -39,29 +39,6 @@ export const App = () => {
     getPages();
   }, [query, page]);
 
-  // async componentDidUpdate(_, prevState) {
-  //   const { query, page } = this.state;
-  //   if (prevState.query !== query || prevState.page !== page) {
-  //     try {
-  //       this.setState({ isLoading: true, isError: false });
-  //       const response = await fetchImages(query, page);
-
-  //       this.setState(prevState => {
-  //         const { hits, totalHits } = response;
-  //         return {
-  //           images: [...prevState.images, ...hits],
-  //           isLoading: false,
-  //           totalPages: Math.ceil(totalHits / 12),
-  //         };
-  //       });
-  //     } catch (error) {
-  //       this.setState({ isError: true });
-  //     } finally {
-  //       this.setState({ isLoading: false });
-  //     }
-  //   }
-  // }
-
   const handleSubmit = newQuery => {
     setQuery(newQuery);
     setPage(1);
